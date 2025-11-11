@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Telangana Revenue Dept — ID Card Generator</title>
+  <style>
+    :root{
+      --card-w: 120mm;
+      --card-h: 75mm;
+      --radius: 4mm;
+      --brand: #0b7a42;
+      --ink: #1a2b3a;
+    }
+    *{box-sizing:border-box}
+    body{font-family:Inter,system-ui,Segoe UI,Roboto,Arial;background:#f5f7fb;margin:16px;color:var(--ink);display:flex;flex-direction:column;align-items:center}
+    h1{font-size:18px;margin-bottom:10px;text-align:center}
+
+    .card{width:var(--card-w);height:var(--card-h);border-radius:var(--radius);background:#fff;box-shadow:0 6px 18px rgba(15,23,42,.12);overflow:hidden;border:0.4mm solid #e7ebf4;margin:10px auto;position:relative;}
+
+    ./* Move background logo down so it appears fully */
+.bg-logo{
+  position:absolute;
+  inset:0;
+  opacity:0.12;              /* << increase or decrease this between 0.01–0.08 */
+  pointer-events:none;
+  z-index:0;
+}
+
+.bg-logo img{
+  position:absolute;
+  left:50%;
+  top:55%;
+  transform:translate(-50%,-50%);
+  width:80%;
+  height:70%;
+  object-fit:contain;
+  filter:grayscale(15%) brightness(40%) opacity(0.25); /* darker + softer look */
+}
+
+#front .bg-logo img{ top:70%; }
+#back  .bg-logo img{ top:70%; }
+
+
+    .hdr{display:grid;grid-template-columns:20mm 1fr;gap:4mm;align-items:center;padding:4mm;border-bottom:0.3mm solid #ecf1f7;background:linear-gradient(180deg,#ffffff,#f7fbf9);position:relative;z-index:1}
+    .emblem{width:20mm;height:20mm;border-radius:3mm;display:flex;align-items:center;justify-content:center;overflow:hidden;border:0.3mm solid #d6e6da;background:#fff}
+    .emblem img{width:100%;height:100%;object-fit:contain}
+    .titles{line-height:1.1}
+    .title{font-weight:800;letter-spacing:.3px;color:#114d2f;font-size:4.2mm;white-space:nowrap}
+    .subtitle{font-weight:700;color:#178148;margin-top:1mm;font-size:3.6mm}
+    /* NEW: ID badge under subtitle */
+    .id-badge{
+      display:inline-block;
+      margin-top:1.5mm;
+      padding:1mm 3mm;
+      border:0.3mm solid #178148;
+      border-radius:2mm;
+      font-weight:800;
+      font-size:3.4mm;
+      letter-spacing:.4px;
+      color:#0b7a42;
+      background:#f3fbf6;
+    }
+
+    .body{padding:4mm 5mm;display:flex;gap:5mm;justify-content:flex-start;align-items:flex-start;height:calc(var(--card-h) - 30mm);position:relative;z-index:1;font-size:3.4mm}
+    .photo{width:28mm;height:36mm;border:0.3mm solid #c8d3db;border-radius:2mm;overflow:hidden;background:#f0f3f8}
+    .photo img{width:100%;height:100%;object-fit:cover}
+    .info{display:flex;flex-direction:column;gap:1.5mm}
+    .field{display:flex;gap:2mm}
+    .label{font-weight:600;color:#134d2f;width:22mm}
+    .value{flex:1;border-bottom:0.2mm solid #c7d4cc;padding-bottom:0.5mm}
+
+    .back .body{flex-direction:column;gap:2mm}
+    .back .label{font-weight:600;color:#134d2f;width:30mm}
+
+    .toolbar{text-align:center;margin-bottom:20px}
+    .toolbar input[type=text],.toolbar input[type=date],.toolbar textarea{padding:6px 8px;border:1px solid #d9deea;border-radius:6px;font-size:14px;margin:4px;width:260px}
+    .toolbar button{background:var(--brand);color:#fff;border:0;border-radius:8px;padding:8px 12px;cursor:pointer;margin:4px}
+  </style>
+</head>
+<body>
+  <h1>Telangana Revenue Dept — ID Card Generator</h1>
+  <div class="toolbar">
+    <div>
+      <input id="logoUrl" type="text" placeholder="Paste emblem image URL (SVG/PNG)" />
+      <input id="logoFile" type="file" accept="image/*" />
+    </div>
+    <div>
+      <input id="name" type="text" placeholder="Employee Name" />
+      <input id="relation" type="text" placeholder="S/o or W/o" />
+      <input id="empId" type="text" placeholder="Employee ID" />
+      <input id="designation" type="text" placeholder="Designation" />
+      <input id="place" type="text" placeholder="Place of Working" />
+    </div>
+    <div>
+      <input id="doa" type="date" placeholder="Date of Appointment" />
+      <input id="dob" type="date" placeholder="Date of Birth" />
+      <input id="contact" type="text" placeholder="Contact Number" />
+      <textarea id="address" placeholder="Address"></textarea>
+      <input id="photoFile" type="file" accept="image/*" />
+    </div>
+    <button id="generate">Generate Card</button>
+  </div>
+
+  <!-- Hidden templates for export -->
+  <div style="display:none">
+    <div class="card" id="front">
+      <div class="bg-logo"><img id="bgFront" alt="Background Logo"></div>
+      <div class="hdr">
+        <div class="emblem"><img id="emblemFront" alt="Telangana Emblem" /></div>
+        <div class="titles">
+          <div class="title">GOVERNMENT OF TELANGANA STATE</div>
+          <div class="subtitle">REVENUE DEPARTMENT</div>
+          <!-- NEW LINE -->
+          <div class="id-badge">IDENTITY CARD</div>
+        </div>
+      </div>
+      <div class="body">
+        <div class="photo"><img id="photoImg" alt="Photo"/></div>
+        <div class="info">
+          <div class="field"><div class="label">Name:</div><div class="value" id="vName"></div></div>
+          <div class="field"><div class="label">S/W/o:</div><div class="value" id="vRelation"></div></div>
+          <div class="field"><div class="label">Emp ID:</div><div class="value" id="vEmpId"></div></div>
+          <div class="field"><div class="label">Desig.:</div><div class="value" id="vDesignation"></div></div>
+          <div class="field"><div class="label">Place:</div><div class="value" id="vPlace"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card back" id="back">
+      <div class="bg-logo"><img id="bgBack" alt="Background Logo"></div>
+      <div class="hdr">
+        <div class="emblem"><img id="emblemBack" alt="Telangana Emblem" /></div>
+        <div class="titles">
+          <div class="title">GOVERNMENT OF TELANGANA STATE</div>
+          <div class="subtitle">REVENUE DEPARTMENT</div>
+          <!-- NEW LINE -->
+          <div class="id-badge">IDENTITY CARD</div>
+        </div>
+      </div>
+      <div class="body">
+        <div class="field"><div class="label">Date of Appt.:</div><div class="value" id="vDoa"></div></div>
+        <div class="field"><div class="label">Date of Birth:</div><div class="value" id="vDob"></div></div>
+        <div class="field"><div class="label">Contact:</div><div class="value" id="vContact"></div></div>
+        <div class="field"><div class="label">Address:</div><div class="value" id="vAddress"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const logoFile = document.getElementById('logoFile');
+    const emblemFront = document.getElementById('emblemFront');
+    const emblemBack  = document.getElementById('emblemBack');
+    const bgFront = document.getElementById('bgFront');
+    const bgBack = document.getElementById('bgBack');
+    const photoFile = document.getElementById('photoFile');
+    const photoImg = document.getElementById('photoImg');
+
+    document.getElementById('generate').addEventListener('click', ()=>{
+      const name=document.getElementById('name').value.trim();
+      if(!name){alert('Please enter the name before generating card');return;}
+      const rel=document.getElementById('relation').value;
+      const id=document.getElementById('empId').value;
+      const des=document.getElementById('designation').value;
+      const place=document.getElementById('place').value;
+      const doa=document.getElementById('doa').value;
+      const dob=document.getElementById('dob').value;
+      const contact=document.getElementById('contact').value;
+      const addr=document.getElementById('address').value;
+
+      document.getElementById('vName').textContent=name;
+      document.getElementById('vRelation').textContent=rel;
+      document.getElementById('vEmpId').textContent=id;
+      document.getElementById('vDesignation').textContent=des;
+      document.getElementById('vPlace').textContent=place;
+      document.getElementById('vDoa').textContent=formatDate(doa);
+      document.getElementById('vDob').textContent=formatDate(dob);
+      document.getElementById('vContact').textContent=contact;
+      document.getElementById('vAddress').textContent=addr;
+
+      const newTab = window.open('', '_blank');
+      const cardHTML = `
+        <html>
+        <head>
+          <title>${name} - ID Card</title>
+          <style>${document.querySelector('style').innerHTML}
+            @media print{
+              body{background:#fff;margin:0;align-items:flex-start}
+              .card{box-shadow:none;margin:0 auto;display:block !important}
+              @page{size:A4 landscape;margin:10mm}
+              button{display:none}
+            }
+            body{display:block;text-align:center;background:#f5f7fb;padding:20px;}
+          </style>
+        </head>
+        <body>
+          ${document.getElementById('front').outerHTML}
+          ${document.getElementById('back').outerHTML}
+          <br>
+          <button onclick="window.print()" style="background:#0b7a42;color:#fff;border:0;border-radius:8px;padding:10px 15px;cursor:pointer;">Download / Print Card</button>
+        </body>
+        </html>`;
+      newTab.document.open();
+      newTab.document.write(cardHTML);
+      newTab.document.close();
+    });
+
+    logoFile.addEventListener('change', e=>{fileToDataUrl(e.target.files[0]).then(setLogo)});
+    photoFile.addEventListener('change', e=>{fileToDataUrl(e.target.files[0]).then(src=>photoImg.src=src)});
+
+    function setLogo(src){
+      emblemFront.src = src; emblemBack.src = src;
+      bgFront.src = src; bgBack.src = src;
+    }
+    function fileToDataUrl(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file);});}
+    function formatDate(d){if(!d)return '';try{return new Date(d).toLocaleDateString('en-GB');}catch{return d}}
+  </script>
+</body>
+</html>
